@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Script Test</title>
+    </head>
+
+    <body>
+
+        <script>
+          function getResult() {
+
+            let xhr = new XMLHttpRequest();
+            let resultsElement = document.getElementById("search_results")
+            let searchElement = document.getElementById("search_input");
+            let searchString = searchElement.value;
+            let request = new URLSearchParams({s: searchString});
+            let handler = './MySearch/MySearch.php';
+            let filter = '*.html';
+            let searchDir = './'
+            let template = `<h5 class="search-title"><a target="_top" href="#{href}" class="search-link">#{title}</a></h5>
+                            <p>...#{token}...</p>
+                            <p class="match"><em>Terms matched: #{count} - URL: #{href}</em></p>`;
+
+
+            request.append( 'template', template );
+            request.append( 'filter', filter );
+            request.append( 'search_dir', searchDir );
+
+            xhr.open( 'GET', handler +'?'+ request.toString(), true );
+
+            xhr.onreadystatechange = ( event ) => {
+              if( xhr.readyState === 4 && xhr.status === 200 ) {
+                resultsElement.innerHTML = xhr.response;
+              }
+            };
+
+            xhr.send();
+          }
+        </script>
+
+        <h1>Script Test</h1>
+        <div>
+            <p>This page is in the MySearch directory and has some script that should be stripped out.</p>
+        </div>
+
+    </body>
+</html>

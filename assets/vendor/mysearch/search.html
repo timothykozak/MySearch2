@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>My Search</title>
+        <link rel="stylesheet" href="Search.css" >
+    </head>
+
+    <body>
+
+        <script src="GetResult.js"></script>
+
+        <h1>MySearch.php Search Functionality</h1>
+
+        <div>This search will look through the html files in the root and all subdirectories.
+            Searching for <code>functionality</code> will give this file.
+            Searching for <code>quartz</code> will give QTest.html and this file.
+            Searching for <code>script</code> will give ScriptTest.html and this file.
+            Searching for <code>the</code> will give both of them plus this file.
+            Please note that this search is not case sensitive.<br><br>
+        </div>
+           <div>
+               <input type="text" id="search_input" placeholder="Enter a keyword" name="s">
+               <button onclick="getResult()">Search</button>
+               <p id="search_results"></p>
+           </div>
+
+    </body>
+</html>

@@ -1,0 +1,26 @@
+/*  Search.css
+    This style sheet is contains the classes used to display
+    the search results.
+*/
+
+.search-title {
+    font-size: 0.8125rem;
+}
+.match {
+    color: #00b1fd;
+}
+.match em {
+    font-style: normal;
+}
+/* These are inserted by MySearch.php */
+.search {
+    background-color: rgba(28, 70, 236, 0.44);
+}
+.search-list {
+    list-style-type: none;
+}
+.search-list-item {
+    padding: 12px 0;
+    margin: 0;
+    border-bottom: 1px solid #dee2e6;
+}
