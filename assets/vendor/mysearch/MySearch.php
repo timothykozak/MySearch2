@@ -122,7 +122,8 @@ foreach ($files as $file) {
 
         $final_result[$file_count]['page_title'][] = $page_title[1];
         //$final_result[$file_count]['file_name'][] = preg_replace("/^.{3}/", "\\1", $file); // TODO Make normal path
-        $final_result[$file_count]['file_name'][] = preg_replace("/^\.\.\/\./", "\\1", $file);
+        //$final_result[$file_count]['file_name'][] = preg_replace("/^\.\.\/\./", "\\1", $file);
+        $final_result[$file_count]['file_name'][] = $file;
     }
 
     for ($j = 0; $j < count($template_tokens); $j++) {
