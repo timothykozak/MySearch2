@@ -57,33 +57,11 @@
 
 // TODO search term of nothing matches everything
 
-if (!isset($_GET['s'])) {
-    die('You must define a search term!');
-}
-
-$search_in = array('html', 'htm');  // Allowable filetypes to search in
-$search_dir = '../..';  // Starting directory, might be overridden by a passed parameter
 define('SIDE_CHARS', 15);
 $file_count = 0;    // The number of files found
-$search_term = mb_strtolower($_GET['s'], 'UTF-8');
-
-if ($search_term == "?s=") {
-    $search_term = "";
-}
-
-if (isset($_GET['search_dir'])) {
-    $search_dir = $_GET['search_dir'];
-}
-
-$search_term = preg_replace('/^\/$/', '"/"', $search_term);
-$search_term = preg_replace('/\+/', ' ', $search_term);
-$search_term_length = strlen($search_term);
-
 $final_result = array();
 
-$search_filter_init = $_GET['filter'];
-$search_filter = preg_replace("/\*/", ".*", $search_filter_init);
-$search_template = preg_replace('/\+/', ' ', $_GET['template']);
+[$search_term, $search_term_length, $search_in, $search_dir, $search_filter, $search_template] = sanitize_GET();
 
 $files = list_files($search_dir);
 
@@ -97,18 +75,7 @@ foreach ($files as $file) {
         continue;
     }
 
-    $contents = file_get_contents($file);
-    preg_match("/<title>(.*)<\/title>/", $contents, $page_title); //getting page title
-    if (preg_match("/<body.*>(.*)<\/body>/si", $contents, $body_content)) { //getting content only between <body></body> tags
-        $body_content = preg_replace("/<script.*>.*<\/script>/si", '', $body_content);  // Remove any scripts
-        $clean_content = strip_tags($body_content[0]); //remove html tags
-        $clean_content = preg_replace('/\s+/', ' ', $clean_content); //remove duplicate whitespaces, carriage returns, tabs, etc
-
-        $found = strpos_recursive(mb_strtolower($clean_content, 'UTF-8'), $search_term);
-
-        $final_result[$file_count]['page_title'][] = $page_title[1];
-        $final_result[$file_count]['file_name'][] = $file;
-    }
+    [$found, $clean_content] = process_contents($file, $file_count, $search_term, $final_result);
 
     if ($found && !empty($found)) {
         for ($z = 0; $z < count($found[0]); $z++) {
@@ -178,6 +145,33 @@ if ($file_count > 0) {
 </div>
 
 <?php
+
+function sanitize_GET()
+{ // Obtain the GET variables and sanitize as necessary.
+    if (!isset($_GET['s'])) {
+        die('You must define a search term!');
+    }
+
+    $search_in = array('html', 'htm');  // Allowable filetypes to search in
+    $search_dir = '../..';  // Starting directory, might be overridden by a passed parameter
+    $search_term = mb_strtolower($_GET['s'], 'UTF-8');
+
+    if (isset($_GET['search_dir'])) {
+        $search_dir = $_GET['search_dir'];
+    }
+
+    $search_term = preg_replace('/^\/$/', '"/"', $search_term);
+    $search_term = preg_replace('/\+/', ' ', $search_term);
+    $search_term_length = strlen($search_term);
+
+
+    $search_filter_init = $_GET['filter'];
+    $search_filter = preg_replace("/\*/", ".*", $search_filter_init);
+    $search_template = preg_replace('/\+/', ' ', $_GET['template']);
+
+    return([$search_term, $search_term_length, $search_in, $search_dir, $search_filter, $search_template]);
+}
+
 function list_files($dir)
 {   //lists all the files in the directory given (and sub-directories if it is enabled)
     global $search_in;
@@ -211,6 +205,24 @@ function get_file_extension($filename)
         $result = end($parts);
     }
     return $result;
+}
+
+function process_contents($file, $file_count, $search_term, &$final_result)
+{ // Search through the contents for the any matches and return the cleaned content of the file.
+    $contents = file_get_contents($file);
+
+    if (preg_match("/<body.*>(.*)<\/body>/si", $contents, $body_content)) { //getting content only between <body></body> tags
+        $body_content = preg_replace("/<script.*>.*<\/script>/si", '', $body_content);  // Remove any scripts
+        $clean_content = strip_tags($body_content[0]); //remove html tags
+        $clean_content = preg_replace('/\s+/', ' ', $clean_content); //remove duplicate whitespaces, carriage returns, tabs, etc
+
+        $found = strpos_recursive(mb_strtolower($clean_content, 'UTF-8'), $search_term);
+
+        preg_match("/<title>(.*)<\/title>/", $contents, $page_title); //getting page title
+        $final_result[$file_count]['page_title'][] = $page_title[1];
+        $final_result[$file_count]['file_name'][] = $file;
+    }
+    return[$found, $clean_content];
 }
 
 function strpos_recursive($haystack, $needle, $offset = 0, &$results = array())
