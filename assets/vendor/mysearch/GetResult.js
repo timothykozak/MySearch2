@@ -13,9 +13,7 @@ function getResult() {
   let filter = '*.html';  // Extensions to examine
   let searchDir = '../../..';
   let rootDir = '../../..';  // The site root relative to the location of the search html and search PHP
-  let template = `<h5 class="search-title"><a target="_top" href="#{href}" class="search-link">#{title}</a></h5>
-                            <p>...#{token}...</p>
-                            <p class="match"><em>Terms matched: #{count} - URL: #{href}</em></p>`;
+  let template = `<h5 class="search-title"><a target="_top" href="#{href}" class="search-link">#{title}</a></h5><p>...#{token}...</p><p class="match"><em>Terms matched: #{count} - URL: #{href}</em></p>`;
 
 
   let xhr = new XMLHttpRequest();
