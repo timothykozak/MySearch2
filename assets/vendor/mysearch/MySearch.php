@@ -61,7 +61,7 @@ define('SIDE_CHARS', 15);
 $file_count = 0;    // The number of files found
 $final_result = array();
 
-[$search_term, $search_term_length, $search_in, $search_dir, $search_filter, $search_template] = sanitize_GET();
+[$search_term, $search_term_length, $search_dir, $search_filter, $search_template] = sanitize_GET();
 
 $files = list_files($search_dir);
 
@@ -80,14 +80,13 @@ foreach ($files as $file) {
     if ($found && !empty($found)) {
         for ($z = 0; $z < count($found[0]); $z++) {
             $pos = $found[0][$z][1];
-            $side_chars = SIDE_CHARS;
             if ($pos < SIDE_CHARS) {
-                    $pos_end = SIDE_CHARS * 9 + $search_term_length;
+                $pos_start = $pos;
             } else {
-                $pos_end = SIDE_CHARS * 9 + $search_term_length;
+                $pos_start = $pos - SIDE_CHARS;
             }
+            $pos_end = SIDE_CHARS * 5 + $search_term_length;
 
-            $pos_start = $pos - $side_chars;
             $str = substr($clean_content, $pos_start, $pos_end);
             $result = preg_replace('/' . $search_term . '/ui', '<span class="search">\0</span>', $str);
             $final_result[$file_count]['search_result'][] = $result;
@@ -152,7 +151,6 @@ function sanitize_GET()
         die('You must define a search term!');
     }
 
-    $search_in = array('html', 'htm');  // Allowable filetypes to search in
     $search_dir = '../..';  // Starting directory, might be overridden by a passed parameter
     $search_term = mb_strtolower($_GET['s'], 'UTF-8');
 
@@ -169,12 +167,12 @@ function sanitize_GET()
     $search_filter = preg_replace("/\*/", ".*", $search_filter_init);
     $search_template = preg_replace('/\+/', ' ', $_GET['template']);
 
-    return([$search_term, $search_term_length, $search_in, $search_dir, $search_filter, $search_template]);
+    return([$search_term, $search_term_length, $search_dir, $search_filter, $search_template]);
 }
 
 function list_files($dir)
-{   //lists all the files in the directory given (and sub-directories if it is enabled)
-    global $search_in;
+{   // Returns an array of all the files in $dir and its sub-directories that
+    // have the extension htm or html
 
     $result = array();
     if (is_dir($dir)) {
@@ -185,24 +183,13 @@ function list_files($dir)
                     if (is_dir($file) && $file != './.' && $file != './..') { // Recursively walk the subdirectories
                         $result = array_merge($result, list_files($file));
                     } else if (!is_dir($file)) {
-                        if (in_array(get_file_extension($file), $search_in)) {
+                        if (preg_match('/\.htm[l]?$/', $file)) {
                             $result[] = $file;
                         }
                     }
                 }
             }
         }
-    }
-    return $result;
-}
-
-function get_file_extension($filename)
-{   //returns the extension of a file
-
-    $result = '';
-    $parts = explode('.', $filename);
-    if (is_array($parts) && count($parts) > 1) {
-        $result = end($parts);
     }
     return $result;
 }
