@@ -67,33 +67,12 @@ $files = list_files($search_dir);
 
 foreach ($files as $file) {
 
-    if (0 == filesize($file)) {
-        continue;
-    }
-
-    if (!preg_match("/" . $search_filter . "/", $file)) {
-        continue;
-    }
-
     [$found, $clean_content] = process_contents($file, $file_count, $search_term, $final_result);
 
     if ($found && !empty($found)) {
-        for ($z = 0; $z < count($found[0]); $z++) {
-            $pos = $found[0][$z][1];
-            if ($pos < SIDE_CHARS) {
-                $pos_start = $pos;
-            } else {
-                $pos_start = $pos - SIDE_CHARS;
-            }
-            $pos_end = SIDE_CHARS * 5 + $search_term_length;
-
-            $str = substr($clean_content, $pos_start, $pos_end);
-            $result = preg_replace('/' . $search_term . '/ui', '<span class="search">\0</span>', $str);
-            $final_result[$file_count]['search_result'][] = $result;
-
-        }
+      highlight_matches($found, $file_count, $search_term, $search_term_length, $clean_content, $final_result);
     } else {
-        $final_result[$file_count]['search_result'][] = '';
+      $final_result[$file_count]['search_result'][] = '';
     }
     $file_count++;
 }
@@ -183,7 +162,7 @@ function list_files($dir)
                     if (is_dir($file) && $file != './.' && $file != './..') { // Recursively walk the subdirectories
                         $result = array_merge($result, list_files($file));
                     } else if (!is_dir($file)) {
-                        if (preg_match('/\.htm[l]?$/', $file)) {
+                        if (preg_match('/\.htm[l]?$/', $file) && (0 < filesize($file))) {
                             $result[] = $file;
                         }
                     }
@@ -192,6 +171,18 @@ function list_files($dir)
         }
     }
     return $result;
+}
+
+function strpos_recursive($haystack, $needle, $offset = 0, &$results = array())
+{
+    $offset = stripos($haystack, $needle, $offset);
+    if ($offset === false) {
+        return $results;
+    } else {
+        $pattern = '/' . $needle . '/ui';
+        preg_match_all($pattern, $haystack, $results, PREG_OFFSET_CAPTURE);
+        return $results;
+    }
 }
 
 function process_contents($file, $file_count, $search_term, &$final_result)
@@ -212,15 +203,20 @@ function process_contents($file, $file_count, $search_term, &$final_result)
     return[$found, $clean_content];
 }
 
-function strpos_recursive($haystack, $needle, $offset = 0, &$results = array())
+function highlight_matches($found, $file_count, $search_term, $search_term_length, $clean_content, &$final_result)
 {
-    $offset = stripos($haystack, $needle, $offset);
-    if ($offset === false) {
-        return $results;
-    } else {
-        $pattern = '/' . $needle . '/ui';
-        preg_match_all($pattern, $haystack, $results, PREG_OFFSET_CAPTURE);
-        return $results;
+    for ($z = 0; $z < count($found[0]); $z++) {
+        $pos = $found[0][$z][1];
+        if ($pos < SIDE_CHARS) {
+            $pos_start = $pos;
+        } else {
+            $pos_start = $pos - SIDE_CHARS;
+        }
+        $pos_end = SIDE_CHARS * 5 + $search_term_length;
+
+        $str = substr($clean_content, $pos_start, $pos_end);
+        $result = preg_replace('/' . $search_term . '/ui', '<span class="search">\0</span>', $str);
+        $final_result[$file_count]['search_result'][] = $result;
     }
 }
 
