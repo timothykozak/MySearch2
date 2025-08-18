@@ -61,7 +61,7 @@ define('SIDE_CHARS', 15);
 $file_count = 0;    // The number of files found
 $final_result = array();
 
-[$search_term, $search_term_length, $search_dir, $search_filter, $search_template] = sanitize_GET();
+[$search_term, $search_term_length, $search_dir, $search_template] = sanitize_GET();
 
 $files = list_files($search_dir);
 
@@ -75,15 +75,6 @@ foreach ($files as $file) {
       $final_result[$file_count]['search_result'][] = '';
     }
     $file_count++;
-}
-
-if ($file_count > 0) {
-
-//Sort final result
-    foreach ($final_result as $key => $row) {
-        $search_result[$key] = $row['search_result'];
-    }
-    array_multisort($search_result, SORT_DESC, $final_result);
 }
 
 ?>
@@ -126,27 +117,17 @@ if ($file_count > 0) {
 
 function sanitize_GET()
 { // Obtain the GET variables and sanitize as necessary.
-    if (!isset($_GET['s'])) {
-        die('You must define a search term!');
-    }
+    if (!isset($_GET['search_term'])) die('Internal Error: You must define a search term!');
+    if (!isset($_GET['template'])) die('Internal Error: You must define a template!');
 
-    $search_dir = '../..';  // Starting directory, might be overridden by a passed parameter
-    $search_term = mb_strtolower($_GET['s'], 'UTF-8');
-
-    if (isset($_GET['search_dir'])) {
-        $search_dir = $_GET['search_dir'];
-    }
-
-    $search_term = preg_replace('/^\/$/', '"/"', $search_term);
-    $search_term = preg_replace('/\+/', ' ', $search_term);
+    $search_term = mb_strtolower($_GET['search_term'], 'UTF-8');
+    $search_term = preg_replace('/\+/', ' ', $search_term);  // Spaces get passed as '+'.  Convert back to spaces.
     $search_term_length = strlen($search_term);
+    if ($search_term_length == 0)  die('You must define a search term!');
+    $search_dir = isset($_GET['search_dir']) ? $_GET['search_dir'] :  '../..'; // Starting directory,
+    $search_template = preg_replace('/\+/', ' ', $_GET['template']);  // Spaces get passed as '+'.  Convert back to spaces.
 
-
-    $search_filter_init = $_GET['filter'];
-    $search_filter = preg_replace("/\*/", ".*", $search_filter_init);
-    $search_template = preg_replace('/\+/', ' ', $_GET['template']);
-
-    return([$search_term, $search_term_length, $search_dir, $search_filter, $search_template]);
+    return([$search_term, $search_term_length, $search_dir, $search_template]);
 }
 
 function list_files($dir)
