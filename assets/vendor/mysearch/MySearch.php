@@ -55,9 +55,7 @@
 // This code was originally part of a download of the Charia template
 // from monsterone.com.
 
-// TODO search term of nothing matches everything
-
-define('SIDE_CHARS', 15);
+const SIDE_CHARS = 15;
 $file_count = 0;    // The number of files found
 $final_result = array();
 
@@ -69,7 +67,7 @@ foreach ($files as $file) {
 
     [$found, $clean_content] = process_contents($file, $file_count, $search_term, $final_result);
 
-    if ($found && !empty($found)) {
+    if (!empty($found)) {
       highlight_matches($found, $file_count, $search_term, $search_term_length, $clean_content, $final_result);
     } else {
       $final_result[$file_count]['search_result'][] = '';
@@ -124,13 +122,13 @@ function sanitize_GET()
     $search_term = preg_replace('/\+/', ' ', $search_term);  // Spaces get passed as '+'.  Convert back to spaces.
     $search_term_length = strlen($search_term);
     if ($search_term_length == 0)  die('You must define a search term!');
-    $search_dir = isset($_GET['search_dir']) ? $_GET['search_dir'] :  '../..'; // Starting directory,
+    $search_dir = $_GET['search_dir'] ??  '../..'; // Starting directory,
     $search_template = preg_replace('/\+/', ' ', $_GET['template']);  // Spaces get passed as '+'.  Convert back to spaces.
 
     return([$search_term, $search_term_length, $search_dir, $search_template]);
 }
 
-function list_files($dir)
+function list_files($dir) : array
 {   // Returns an array of all the files in $dir and its sub-directories that
     // have the extension htm or html
 
@@ -143,7 +141,7 @@ function list_files($dir)
                     if (is_dir($file) && $file != './.' && $file != './..') { // Recursively walk the subdirectories
                         $result = array_merge($result, list_files($file));
                     } else if (!is_dir($file)) {
-                        if (preg_match('/\.htm[l]?$/', $file) && (0 < filesize($file))) {
+                        if (preg_match('/\.html?$/', $file) && (0 < filesize($file))) {
                             $result[] = $file;
                         }
                     }
@@ -154,28 +152,21 @@ function list_files($dir)
     return $result;
 }
 
-function strpos_recursive($haystack, $needle, $offset = 0, &$results = array())
-{
-    $offset = stripos($haystack, $needle, $offset);
-    if ($offset === false) {
-        return $results;
-    } else {
-        $pattern = '/' . $needle . '/ui';
-        preg_match_all($pattern, $haystack, $results, PREG_OFFSET_CAPTURE);
-        return $results;
-    }
-}
-
-function process_contents($file, $file_count, $search_term, &$final_result)
+function process_contents($file, $file_count, $search_term, &$final_result) : array
 { // Search through the contents for the any matches and return the cleaned content of the file.
+    $found = array();
     $contents = file_get_contents($file);
+    $clean_content = $contents;
 
     if (preg_match("/<body.*>(.*)<\/body>/si", $contents, $body_content)) { //getting content only between <body></body> tags
         $body_content = preg_replace("/<script.*>.*<\/script>/si", '', $body_content);  // Remove any scripts
         $clean_content = strip_tags($body_content[0]); //remove html tags
         $clean_content = preg_replace('/\s+/', ' ', $clean_content); //remove duplicate whitespaces, carriage returns, tabs, etc
 
-        $found = strpos_recursive(mb_strtolower($clean_content, 'UTF-8'), $search_term);
+        $pattern = '/' . $search_term . '/ui';
+        if (!preg_match_all($pattern, $clean_content, $found, PREG_OFFSET_CAPTURE)) {
+          $found = array(); // Even when there no matches, preg_match_all still updates $found.  Need to re-initialize.
+        }
 
         preg_match("/<title>(.*)<\/title>/", $contents, $page_title); //getting page title
         $final_result[$file_count]['page_title'][] = $page_title[1];
